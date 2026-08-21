@@ -1,24 +1,9 @@
 import { useState } from 'react';
+import { parseArrayInput } from './parseArrayInput';
 
 interface Props {
   onApply: (values: number[]) => void;
   disabled?: boolean;
-}
-
-const MAX_COUNT = 200;
-
-function parse(raw: string): number[] | { error: string } {
-  const parts = raw.split(/[\s,]+/).filter(Boolean);
-  if (parts.length < 2) return { error: 'Enter at least 2 numbers, separated by spaces or commas.' };
-  if (parts.length > MAX_COUNT) return { error: `That's too many — max ${MAX_COUNT} numbers.` };
-  const nums: number[] = [];
-  for (const p of parts) {
-    const n = Number(p);
-    if (!Number.isFinite(n)) return { error: `"${p}" isn't a number.` };
-    if (n <= 0) return { error: 'Use positive numbers only (they set the bar heights).' };
-    nums.push(Math.round(n));
-  }
-  return nums;
 }
 
 export function CustomArrayInput({ onApply, disabled }: Props) {
@@ -26,13 +11,13 @@ export function CustomArrayInput({ onApply, disabled }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const submit = () => {
-    const result = parse(value);
-    if ('error' in result) {
+    const result = parseArrayInput(value);
+    if (!result.ok) {
       setError(result.error);
       return;
     }
     setError(null);
-    onApply(result);
+    onApply(result.values);
   };
 
   return (
@@ -44,11 +29,27 @@ export function CustomArrayInput({ onApply, disabled }: Props) {
         <input
           id="custom-array"
           type="text"
-          inputMode="numeric"
+          /*
+           * Deliberately NOT inputMode="numeric". That renders a digits-only
+           * keypad on iOS with no comma and no space, so a phone visitor had no
+           * way to separate one number from the next and simply left. The
+           * standard keyboard is slightly slower to type digits on, but it is
+           * the one that can actually complete the task.
+           */
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          enterKeyHint="done"
           value={value}
           disabled={disabled}
-          placeholder="e.g. 5, 2, 9, 1, 7, 3"
-          onChange={(e) => setValue(e.target.value)}
+          placeholder="e.g. 5 2 9 1 7 3"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? 'custom-array-error' : 'custom-array-hint'}
+          onChange={(e) => {
+            setValue(e.target.value);
+            if (error) setError(null);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') submit();
           }}
@@ -63,7 +64,15 @@ export function CustomArrayInput({ onApply, disabled }: Props) {
           Use
         </button>
       </div>
-      {error && <p className="text-xs text-danger">{error}</p>}
+      {error ? (
+        <p id="custom-array-error" role="alert" className="text-xs text-danger">
+          {error}
+        </p>
+      ) : (
+        <p id="custom-array-hint" className="text-xs text-muted">
+          Separate them however you like — space, comma, or dash all work.
+        </p>
+      )}
     </div>
   );
 }
