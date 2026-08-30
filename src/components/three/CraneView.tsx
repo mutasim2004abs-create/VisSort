@@ -745,16 +745,52 @@ function CraneScene({ frame, step, snap, reduced, done, stepMs, playing }: Scene
   );
 }
 
+/** Framing distance on a wide canvas, where the vertical fit is the binding one. */
+const CAM_Z_BASE = 10.2;
+/**
+ * Half-width the frame must always contain: the shelf rails and crane posts
+ * reach x = +/-6.3, and the parallax drift needs a little room beyond that.
+ */
+const FRAME_HALF_W = 6.9;
+
+/**
+ * How far back the camera has to sit for the whole rig to fit ACROSS the canvas.
+ *
+ * `fov` is the *vertical* angle, so the horizontal one narrows with the aspect
+ * ratio. A fixed z framed the shelf on a wide desktop canvas and then sliced the
+ * outermost boxes off both edges on a phone, where the canvas is barely wider
+ * than it is tall. Dolly back until the width fits; a wide canvas is still
+ * bound by the vertical fit and keeps the original framing untouched.
+ */
+function framingZ(camera: THREE.Camera): number {
+  const cam = camera as THREE.PerspectiveCamera;
+  if (!cam.isPerspectiveCamera || !cam.aspect) return CAM_Z_BASE;
+  const halfV = Math.tan((cam.fov * Math.PI) / 360);
+  return Math.max(CAM_Z_BASE, FRAME_HALF_W / (halfV * cam.aspect));
+}
+
 /** Fixed 3/4 framing with a whisper of pointer parallax (off for reduced motion). */
 function CameraRig({ reduced, done }: { reduced: boolean; done: boolean }) {
+  // The Canvas mounts the camera at CAM_Z_BASE, so on a narrow canvas the first
+  // frame is the cropped one. Snap straight to the framing distance instead of
+  // easing into it, or the view opens on a second of clipped boxes.
+  const settled = useRef(false);
+
   useFrame(({ camera, pointer, clock }) => {
+    const z = framingZ(camera);
+    if (!settled.current) {
+      settled.current = true;
+      camera.position.set(0, 3.5, z);
+      camera.lookAt(0, 2, 0);
+      return;
+    }
     if (reduced) {
-      camera.position.set(0, 3.5, 10.2);
+      camera.position.set(0, 3.5, z);
     } else {
       const bob = done ? Math.sin(clock.getElapsedTime() * 1.5) * 0.1 : 0;
       camera.position.x += (pointer.x * 0.9 - camera.position.x) * 0.03;
       camera.position.y += (3.5 + bob + pointer.y * 0.35 - camera.position.y) * 0.03;
-      camera.position.z += (10.2 - camera.position.z) * 0.05;
+      camera.position.z += (z - camera.position.z) * 0.05;
     }
     camera.lookAt(0, 2, 0);
   });
@@ -838,7 +874,7 @@ export function CraneView({
   return (
     <section
       aria-label="Sorting visualization"
-      className="relative flex min-h-[440px] flex-1 flex-col overflow-hidden rounded-lg border border-subtle bg-canvas shadow-e1"
+      className="relative flex min-h-[360px] flex-1 flex-col overflow-hidden rounded-lg border border-subtle bg-canvas shadow-e1 sm:min-h-[440px]"
     >
       <p className="sr-only" aria-live="polite">
         {statusLabel}
@@ -847,7 +883,11 @@ export function CraneView({
       {/* No complexity pills here — the info panel beside the stage already
           lists best/average/worst/space, so on-canvas pills were duplicate
           furniture sitting in the trolley's path. */}
-      <div className="relative min-h-[280px] flex-1">
+      {/* The rig is a wide, short subject, and the camera frames it by WIDTH, so
+          box size on screen is set by the canvas width alone. A phone-height
+          stage would only add empty sky above the rail — keep it short here and
+          give it the full height once the canvas is wide enough to use it. */}
+      <div className="relative min-h-[200px] flex-1 sm:min-h-[280px]">
         <Canvas
           dpr={[1, 2]}
           camera={{ position: [0, 3.5, 10.2], fov: 40 }}
