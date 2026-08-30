@@ -51,6 +51,11 @@ export function Transport({
 
   return (
     <div className="pointer-events-none sticky bottom-4 z-30 mt-4 flex justify-center px-4">
+      {/* Content necessarily passes behind a sticky dock. Fade the strip it
+          floats over into the page colour so the narration and legend dissolve
+          under it rather than colliding with the controls. Phones only — the
+          dock is a small centred pill on a wide screen. */}
+      <div aria-hidden="true" className="dock-scrim sm:hidden" />
       <div className="glass pointer-events-auto flex items-center gap-1 rounded-full border border-subtle px-2 py-1.5">
         <GhostButton onClick={onReset} disabled={atStart && status === 'idle'} label="Reset">
           <ResetIcon />

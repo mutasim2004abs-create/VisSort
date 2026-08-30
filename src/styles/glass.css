@@ -41,6 +41,55 @@
   pointer-events: none;
 }
 
+/**
+ * Floating controls that sit over LIVE page content, rather than over a hero.
+ *
+ * `.liquid-glass` is 1% white behind a 4px blur — enough to catch the light on
+ * an empty backdrop, nowhere near enough to read as a surface once a dense page
+ * scrolls underneath it. On a phone the nav's logo and menu button landed
+ * straight on the Controls card and its slider labels read clean through them.
+ * Same glass and the same lit edge, but backed by the page's own surface colour
+ * so it stays a control instead of becoming a window.
+ *
+ * Must stay after `.liquid-glass`: equal specificity, so it wins on order.
+ */
+.liquid-glass-solid {
+  background: color-mix(in srgb, var(--bg-surface-2) 90%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+}
+/* No color-mix (older WebKit): fall back to the flat surface colour. */
+@supports not (background: color-mix(in srgb, red 50%, transparent)) {
+  .liquid-glass-solid {
+    background: var(--bg-surface-2);
+  }
+}
+
+/**
+ * The transport dock is sticky, so page content necessarily passes behind it
+ * mid-scroll — narration and the legend were colliding with the controls. Fade
+ * the bottom of the viewport into the page colour so content dissolves under
+ * the dock instead of butting into it. Phones only: on a wide screen the dock
+ * is a small centred pill and a full-width fade would darken content it never
+ * covers.
+ */
+.dock-scrim {
+  position: absolute;
+  /* Cancels the px-4 on the sticky wrapper: the fade has to reach the screen
+     edges, or it leaves an unfaded gutter down each side. */
+  left: -1rem;
+  right: -1rem;
+  top: -2rem;
+  bottom: -1rem;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    var(--bg-base) 0%,
+    color-mix(in srgb, var(--bg-base) 88%, transparent) 55%,
+    transparent 100%
+  );
+}
+
 .liquid-glass-strong {
   background: rgba(255, 255, 255, 0.01);
   background-blend-mode: luminosity;

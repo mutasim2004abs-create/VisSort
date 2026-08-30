@@ -13,6 +13,11 @@ const LINKS: { to: string; label: string; end?: boolean }[] = [
  * Floating liquid-glass navbar. Desktop shows a centred glass pill of links.
  * Mobile uses a tap-to-open menu (a horizontal scroll strip is fiddly on real
  * phones), so every link is always one tap away. Dark-only, no theme switch.
+ *
+ * The bar is fixed, so the page scrolls underneath it and its surfaces are
+ * backed (`.liquid-glass-solid`) rather than left at the 1%-white glass the
+ * rest of the site uses over static backdrops — otherwise whatever is behind
+ * reads straight through the controls.
  */
 export function Nav() {
   const [open, setOpen] = useState(false);
@@ -33,7 +38,7 @@ export function Nav() {
         <Link
           to="/"
           aria-label="VisSort home"
-          className="liquid-glass grid h-12 w-12 shrink-0 place-items-center rounded-full font-display text-2xl italic leading-none text-primary"
+          className="liquid-glass liquid-glass-solid grid h-12 w-12 shrink-0 place-items-center rounded-full font-display text-2xl italic leading-none text-primary"
         >
           V
         </Link>
@@ -41,7 +46,7 @@ export function Nav() {
         {/* Desktop nav */}
         <nav
           aria-label="Primary"
-          className="liquid-glass hidden items-center rounded-full p-1.5 md:flex"
+          className="liquid-glass liquid-glass-solid hidden items-center rounded-full p-1.5 md:flex"
         >
           {LINKS.map((link) => (
             <NavLink
@@ -71,7 +76,7 @@ export function Nav() {
           onClick={() => setOpen((o) => !o)}
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
-          className="liquid-glass grid h-12 w-12 shrink-0 place-items-center rounded-full text-primary md:hidden"
+          className="liquid-glass liquid-glass-solid grid h-12 w-12 shrink-0 place-items-center rounded-full text-primary md:hidden"
         >
           <svg
             width="22"
@@ -99,7 +104,7 @@ export function Nav() {
       {open && (
         <nav
           aria-label="Primary mobile"
-          className="liquid-glass rise-in mt-2 flex flex-col gap-1 rounded-[1.5rem] p-2 md:hidden"
+          className="liquid-glass liquid-glass-solid rise-in mt-2 flex flex-col gap-1 rounded-[1.5rem] p-2 md:hidden"
         >
           {LINKS.map((link) => (
             <NavLink
